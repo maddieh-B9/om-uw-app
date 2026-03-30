@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OM Analyzer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f7f7f5;color:#1a1a1a;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:24px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px}
+.sub{color:#888;font-size:14px;margin-bottom:28px}
+.api-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;margin-bottom:24px}
+.api-box.hidden{display:none}
+.api-box p{font-size:13px;color:#78350f;margin-bottom:10px}
+.api-row{display:flex;gap:8px}
+.api-input{flex:1;padding:8px 11px;border:1px solid #fde68a;border-radius:6px;font-size:13px;font-family:monospace;outline:none;background:white}
+.api-saved{font-size:12px;color:#16a34a;margin-top:8px;display:none}
+.card{background:white;border:1px solid #e5e5e5;border-radius:10px;margin-bottom:12px;padding:20px}
+.dz{display:block;border:1.5px dashed #ccc;border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:all .15s;background:#fafafa;position:relative;margin-bottom:14px}
+.dz:hover{border-color:#1a1a1a;background:#f0f0f0}
+.dz.has-file{border-color:#16a34a;border-style:solid;background:#f0fdf4}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:28px;margin-bottom:8px}
+.dz-label{font-weight:600;font-size:14px;margin-bottom:3px}
+.dz-sub{font-size:12px;color:#888}
+.dz-file{font-size:12px;color:#16a34a;margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-dark{background:#1a1a1a;color:white}.btn-dark:hover{background:#333}.btn-dark:disabled{opacity:.35;cursor:not-allowed}
+.btn-outline{background:transparent;color:#1a1a1a;border:1px solid #ccc}.btn-outline:hover{background:#f0f0f0}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.prog-wrap{margin-top:14px}
+.prog-bar{height:3px;background:#e5e5e5;border-radius:999px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:#1a1a1a;border-radius:999px;transition:width .35s;width:0%}
+.prog-txt{font-size:12px;color:#888}
+.err{margin-top:12px;padding:10px 14px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:13px;display:none}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:#f7f7f5;border-radius:8px;padding:12px}
+.metric-label{font-size:11px;color:#888;margin-bottom:4px}
+.metric-val{font-size:15px;font-weight:600}
+.report-card{background:white;border:1px solid #e5e5e5;border-radius:10px;padding:1rem 1.25rem;margin-bottom:10px}
+.rct{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e5e5e5}
+.rrow{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid #f5f5f5;gap:16px}
+.rrow:last-child{border-bottom:none}
+.rk{font-size:13px;color:#666;flex-shrink:0;min-width:140px}
+.rv{font-size:13px;color:#1a1a1a;text-align:right;line-height:1.5}
+.rtxt{font-size:13px;color:#1a1a1a;line-height:1.7}
+.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.hint{font-size:12px;color:#888}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OM Analyzer</h1>
+  <p class="sub">Upload an offering memorandum — get a full market intelligence report in seconds.</p>
+
+  <div class="api-box" id="api-box">
+    <p><strong>Enter your API key to get started.</strong> Stored only in this browser tab, never saved anywhere else.</p>
+    <div class="api-row">
+      <input type="password" class="api-input" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+      <button class="btn btn-dark" onclick="saveKey()" style="padding:8px 18px">Save</button>
+    </div>
+    <div class="api-saved" id="api-saved">✓ Ready to analyze</div>
+  </div>
+
+  <div class="card">
+    <label class="dz" id="dz">
+      <input type="file" id="om-file" accept=".pdf,.xlsx,.xls" onchange="handleFile(this.files[0])">
+      <div class="dz-icon">📄</div>
+      <div class="dz-label">Upload Offering Memorandum</div>
+      <div class="dz-sub">PDF or Excel — drag & drop or click to browse</div>
+      <div class="dz-file" id="fn"></div>
+    </label>
+    <div class="btn-row">
+      <button class="btn btn-dark" id="abtn" onclick="runAnalysis()" disabled>Analyze OM</button>
+      <span class="hint" id="hint">Upload a file to continue</span>
+    </div>
+    <div class="prog-wrap" id="loading" style="display:none">
+      <div class="prog-bar"><div class="prog-fill" id="prog"></div></div>
+      <div class="prog-txt" id="ptxt"></div>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="report" style="display:none">
+    <div class="rh">
+      <div style="font-size:16px;font-weight:600" id="rtitle"></div>
+      <button class="btn btn-outline" onclick="reset()" style="font-size:12px;padding:6px 14px">Analyze another</button>
+    </div>
+    <div class="metric-grid" id="metrics"></div>
+    <div id="sections"></div>
+  </div>
+</div>
+
+<script>
+let apiKey='',file=null;
+
+function saveKey(){
+  const v=document.getElementById('api-key').value.trim();
+  if(!v.startsWith('sk-')){alert('Please enter a valid API key starting with sk-ant-');return;}
+  apiKey=v;
+  document.getElementById('api-saved').style.display='block';
+  setTimeout(()=>document.getElementById('api-box').classList.add('hidden'),1200);
+}
+document.getElementById('api-key').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
+
+function handleFile(f){
+  if(!f)return; file=f;
+  document.getElementById('dz').classList.add('has-file');
+  document.getElementById('fn').textContent='✓ '+f.name;
+  document.getElementById('abtn').disabled=false;
+  document.getElementById('hint').style.display='none';
+}
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='#1a1a1a';});
+dz.addEventListener('dragleave',()=>dz.style.borderColor='');
+dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';handleFile(e.dataTransfer.files[0]);});
+
+function sp(pct,txt){document.getElementById('prog').style.width=pct+'%';document.getElementById('ptxt').textContent=txt;}
+
+async function toB64(f){return new Promise((r,j)=>{const rd=new FileReader();rd.onload=e=>r(e.target.result.split(',')[1]);rd.onerror=j;rd.readAsDataURL(f);});}
+
+const PROMPT=`You are a real estate market intelligence analyst. Analyze this Offering Memorandum and return a detailed JSON report. Return ONLY raw JSON, no markdown:
+{"property":{"name":null,"address":null,"city_state":null,"asset_type":null,"units":null,"year_built":null,"sf":null},"deal":{"list_price":null,"price_per_unit":null,"cap_rate":null,"noi":null,"occupancy":null,"avg_rent":null,"gross_income":null},"assumptions":{"rent_growth":null,"expense_growth":null,"vacancy":null,"exit_cap":null,"hold_period":null,"irr_projection":null,"coc_return":null},"market":{"economic_drivers":null,"major_employers":null,"population_trend":null,"rent_trend":null,"submarket_vacancy":null,"new_supply":null},"area_retail":null,"schools":null,"flood_zone":null,"property_tax":{"annual_amount":null,"rate":null,"how_handled":null,"reassessment_notes":null},"sales_comps":[{"address":null,"price":null,"price_per_unit":null,"cap_rate":null,"year":null}],"unit_mix":[{"type":null,"count":null,"sf":null,"avg_rent":null,"market_rent":null}],"strengths":null,"risks":null,"summary":null}
+Be thorough and extract every detail. Return ONLY the JSON.`;
+
+async function runAnalysis(){
+  if(!apiKey){document.getElementById('api-box').classList.remove('hidden');document.getElementById('api-key').focus();return;}
+  document.getElementById('abtn').disabled=true;
+  document.getElementById('err').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('report').style.display='none';
+  sp(5,'Reading document...');
+  try{
+    const parts=[{type:'text',text:PROMPT}];
+    if(file.name.match(/\.pdf$/i)){sp(20,'Processing PDF...');const b=await toB64(file);parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});}
+    else{sp(20,'Processing file...');parts.push({type:'text',text:'\n[FILE: '+file.name+']'});}
+    sp(45,'AI analyzing the OM...');
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:parts}]})});
+    sp(80,'Building report...');
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'API error '+resp.status);}
+    const data=await resp.json();
+    const raw=data.content.map(b=>b.text||'').join('');
+    const clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    let parsed;try{parsed=JSON.parse(clean);}catch{const m=clean.match(/\{[\s\S]*\}/);if(m)parsed=JSON.parse(m[0]);else throw new Error('Could not parse response');}
+    sp(100,'Done!');
+    setTimeout(()=>{document.getElementById('loading').style.display='none';renderReport(parsed);},400);
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('err').textContent='Error: '+e.message;document.getElementById('err').style.display='block';
+    document.getElementById('abtn').disabled=false;
+  }
+}
+
+function fmt(v){if(v===null||v===undefined||String(v)==='null'||v==='')return'—';return String(v);}
+function fmtM(v){if(!v)return'—';const n=parseFloat(String(v).replace(/[$,]/g,''));return isNaN(n)?String(v):'$'+n.toLocaleString();}
+
+function renderReport(d){
+  const p=d.property||{},deal=d.deal||{},ass=d.assumptions||{},mkt=d.market||{},tax=d.property_tax||{};
+  document.getElementById('rtitle').textContent=p.name||p.address||'OM Analysis Report';
+  document.getElementById('metrics').innerHTML=[['Asset type',fmt(p.asset_type)],['Units',fmt(p.units)],['Ask price',fmtM(deal.list_price)],['Cap rate',deal.cap_rate?fmt(deal.cap_rate)+(String(deal.cap_rate).includes('%')?'':'%'):'—'],['Occupancy',fmt(deal.occupancy)],['Avg rent',deal.avg_rent?'$'+fmt(deal.avg_rent)+'/mo':'—']].map(([l,v])=>`<div class="metric"><div class="metric-label">${l}</div><div class="metric-val">${v}</div></div>`).join('');
+  const sec=document.getElementById('sections');sec.innerHTML='';
+  const cards=[
+    {title:'Property overview',rows:[['Address',fmt(p.address)],['City / State',fmt(p.city_state)],['Year built',fmt(p.year_built)],['Total SF',p.sf?Number(p.sf).toLocaleString()+' SF':'—'],['NOI',fmtM(deal.noi)],['Price per unit',fmtM(deal.price_per_unit)],['Gross income',fmtM(deal.gross_income)]]},
+    {title:'UW assumptions in the OM',rows:[['Rent growth',fmt(ass.rent_growth)],['Expense growth',fmt(ass.expense_growth)],['Vacancy',fmt(ass.vacancy)],['Exit cap rate',fmt(ass.exit_cap)],['Hold period',fmt(ass.hold_period)],['Projected IRR',fmt(ass.irr_projection)],['Cash-on-cash',fmt(ass.coc_return)]]},
+    {title:'Market & economic drivers',rows:[['Economic drivers',fmt(mkt.economic_drivers)],['Major employers',fmt(mkt.major_employers)],['Population trend',fmt(mkt.population_trend)],['Rent trend',fmt(mkt.rent_trend)],['Submarket vacancy',fmt(mkt.submarket_vacancy)],['New supply',fmt(mkt.new_supply)]]},
+    {title:'Area retail & amenities',rows:[['Nearby retail',fmt(d.area_retail)]]},
+    {title:'Schools',rows:[['School information',fmt(d.schools)]]},
+    {title:'Flood zone',rows:[['Status',fmt(d.flood_zone)]]},
+    {title:'Property taxes',rows:[['Annual amount',fmtM(tax.annual_amount)],['Tax rate',fmt(tax.rate)],['How handled',fmt(tax.how_handled)],['Reassessment notes',fmt(tax.reassessment_notes)]]},
+  ];
+  cards.forEach(c=>{
+    const hasData=c.rows.some(r=>r[1]&&r[1]!=='—');if(!hasData)return;
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML='<div class="rct">'+c.title+'</div>'+c.rows.filter(r=>r[1]&&r[1]!=='—').map(r=>`<div class="rrow"><span class="rk">${r[0]}</span><span class="rv">${r[1]}</span></div>`).join('');
+    sec.appendChild(div);
+  });
+  if(d.unit_mix&&d.unit_mix.filter(u=>u.type).length){
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML='<div class="rct">Unit mix</div><table style="width:100%;font-size:13px;border-collapse:collapse"><thead><tr>'+['Type','Count','SF','Avg rent','Market rent'].map(h=>`<th style="text-align:left;padding:5px 8px;font-size:11px;color:#888;border-bottom:1px solid #e5e5e5">${h}</th>`).join('')+'</tr></thead><tbody>'+d.unit_mix.filter(u=>u.type).map(u=>'<tr>'+[u.type,u.count,u.sf?u.sf+' SF':'—',u.avg_rent?'$'+u.avg_rent:'—',u.market_rent?'$'+u.market_rent:'—'].map(v=>`<td style="padding:6px 8px;border-bottom:1px solid #f5f5f5">${v||'—'}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
+    sec.appendChild(div);
+  }
+  if(d.sales_comps&&d.sales_comps.filter(c=>c.address).length){
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML='<div class="rct">Sales comps</div><div style="overflow-x:auto"><table style="width:100%;font-size:13px;border-collapse:collapse"><thead><tr>'+['Address','Sale price','$/Unit','Cap rate','Year'].map(h=>`<th style="text-align:left;padding:5px 8px;font-size:11px;color:#888;border-bottom:1px solid #e5e5e5;white-space:nowrap">${h}</th>`).join('')+'</tr></thead><tbody>'+d.sales_comps.filter(c=>c.address).map(c=>'<tr>'+[c.address,fmtM(c.price),fmtM(c.price_per_unit),c.cap_rate?c.cap_rate+(String(c.cap_rate).includes('%')?'':'%'):'—',c.year||'—'].map(v=>`<td style="padding:6px 8px;border-bottom:1px solid #f5f5f5">${v||'—'}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
+    sec.appendChild(div);
+  }
+  ['strengths','risks','summary'].forEach(k=>{
+    if(!d[k]||d[k]==='null')return;
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML=`<div class="rct">${k.charAt(0).toUpperCase()+k.slice(1)}</div><div class="rtxt">${fmt(d[k])}</div>`;
+    sec.appendChild(div);
+  });
+  document.getElementById('report').style.display='block';
+  document.getElementById('report').scrollIntoView({behavior:'smooth'});
+}
+
+function reset(){
+  file=null;document.getElementById('fn').textContent='';document.getElementById('dz').classList.remove('has-file');
+  document.getElementById('abtn').disabled=true;document.getElementById('hint').style.display='';
+  document.getElementById('report').style.display='none';document.getElementById('om-file').value='';
+}
+</script>
+</body>
+</html>
