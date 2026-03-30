@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OM App</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f7f7f5;color:#1a1a1a;min-height:100vh}
+.wrap{max-width:800px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:24px;font-weight:600;letter-spacing:-0.02em;margin-bottom:6px}
+.sub{color:#888;font-size:14px;margin-bottom:32px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #e5e5e5;padding-bottom:0}
+.tab{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.tab-content{display:none}.tab-content.active{display:block}
+.api-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;margin-bottom:20px}
+.api-box.hidden{display:none}
+.api-box p{font-size:13px;color:#78350f;margin-bottom:10px}
+.api-row{display:flex;gap:8px}
+.api-input{flex:1;padding:7px 11px;border:1px solid #fde68a;border-radius:6px;font-size:12px;font-family:monospace;outline:none;background:white}
+.api-saved{font-size:12px;color:#16a34a;margin-top:6px;display:none}
+.card{background:white;border:1px solid #e5e5e5;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.card-body{padding:0 20px 20px}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.dz{position:relative;border:1.5px dashed #ccc;border-radius:10px;padding:20px 12px;text-align:center;cursor:pointer;transition:all .15s;background:#fafafa}
+.dz:hover{border-color:#1a1a1a;background:#f0f0f0}
+.dz.has-file{border-color:#16a34a;border-style:solid;background:#f0fdf4}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:20px;margin-bottom:6px}
+.dz-label{font-weight:600;font-size:12px;margin-bottom:2px}
+.dz-sub{font-size:11px;color:#888}
+.dz-file{font-size:11px;color:#16a34a;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-dark{background:#1a1a1a;color:white}.btn-dark:hover{background:#333}.btn-dark:disabled{opacity:.35;cursor:not-allowed}
+.btn-outline{background:transparent;color:#1a1a1a;border:1px solid #ccc}.btn-outline:hover{background:#f0f0f0}
+.btn-green{background:#16a34a;color:white}.btn-green:hover{background:#15803d}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.prog-wrap{margin-top:12px}
+.prog-bar{height:3px;background:#e5e5e5;border-radius:999px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;background:#1a1a1a;border-radius:999px;transition:width .35s;width:0%}
+.prog-txt{font-size:12px;color:#888}
+.err{margin-top:10px;padding:10px 13px;border-radius:6px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;font-size:13px;display:none}
+.sec-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#888;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e5e5e5}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#666;font-weight:500}
+.field input{padding:7px 10px;border:1px solid #e5e5e5;border-radius:6px;font-family:monospace;font-size:12px;color:#1a1a1a;background:white;outline:none;width:100%}
+.field input:focus{border-color:#1a1a1a}
+.tbl-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:400px}
+thead th{text-align:left;padding:5px 8px;font-size:11px;font-weight:500;color:#888;border-bottom:1px solid #e5e5e5;white-space:nowrap}
+tbody td{padding:3px 5px;border-bottom:1px solid #f0f0f0}
+tbody td input{width:100%;padding:4px 6px;border:none;background:transparent;font-family:monospace;font-size:12px;color:#1a1a1a;outline:none;min-width:55px}
+tbody td input:focus{background:#f7f7f5;border-radius:4px}
+.add-btn{margin-top:8px;padding:5px 12px;font-size:12px;background:#f0f0f0;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;color:#666;font-family:inherit;font-weight:500}
+.add-btn:hover{background:#e5e5e5}
+.sec{margin-bottom:16px}
+.success-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px}
+.success-title{font-size:15px;font-weight:600;color:#16a34a;margin-bottom:4px}
+.success-sub{font-size:12px;color:#888;margin-bottom:16px;font-family:monospace}
+.hint{font-size:12px;color:#888}
+.report-card{background:white;border:1px solid #e5e5e5;border-radius:10px;padding:1rem 1.25rem;margin-bottom:10px}
+.report-card-title{font-size:13px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e5e5e5}
+.report-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid #f0f0f0;gap:12px}
+.report-row:last-child{border-bottom:none}
+.rkey{font-size:13px;color:#666;flex-shrink:0}
+.rval{font-size:13px;color:#1a1a1a;text-align:right}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:#f7f7f5;border-radius:8px;padding:12px}
+.metric-label{font-size:11px;color:#888;margin-bottom:4px}
+.metric-val{font-size:15px;font-weight:600}
+@media(max-width:560px){.upload-grid{grid-template-columns:1fr}.fg2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>OM App</h1>
+  <p class="sub">Upload an offering memorandum — analyze it or map it to your UW template.</p>
+
+  <!-- API Key -->
+  <div class="api-box" id="api-box">
+    <p><strong>Enter your Anthropic API key to get started.</strong> Stored only in this browser tab. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#92400e">Get a key →</a></p>
+    <div class="api-row">
+      <input type="password" class="api-input" id="api-key" placeholder="sk-ant-..." autocomplete="off">
+      <button class="btn btn-dark" onclick="saveKey()" style="padding:7px 16px">Save</button>
+    </div>
+    <div class="api-saved" id="api-saved">✓ Key saved</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('analyzer')">OM Analyzer</button>
+    <button class="tab" onclick="switchTab('uw')">UW Model</button>
+  </div>
+
+  <!-- OM ANALYZER TAB -->
+  <div class="tab-content active" id="tab-analyzer">
+    <div class="card">
+      <div style="padding:16px 20px 0">
+        <div style="font-size:13px;color:#888;margin-bottom:12px">Upload an OM to get a full market intelligence report — deal summary, economic drivers, schools, flood zone, property taxes, rent trends, comps, and more.</div>
+      </div>
+      <div class="card-body" style="padding-top:14px">
+        <label class="dz" id="dz-a" style="display:block;max-width:340px">
+          <input type="file" accept=".pdf,.xlsx,.xls" onchange="setAnalyzerFile(this.files[0])">
+          <div class="dz-icon">📄</div>
+          <div class="dz-label">Offering Memo</div>
+          <div class="dz-sub">PDF or Excel</div>
+          <div class="dz-file" id="fn-a"></div>
+        </label>
+        <div class="btn-row">
+          <button class="btn btn-dark" id="btn-analyze" onclick="runAnalysis()" disabled>Analyze OM</button>
+          <span class="hint" id="hint-a">Upload a file to continue</span>
+        </div>
+        <div class="prog-wrap" id="prog-a" style="display:none">
+          <div class="prog-bar"><div class="prog-fill" id="pf-a"></div></div>
+          <div class="prog-txt" id="pt-a"></div>
+        </div>
+        <div class="err" id="err-a"></div>
+      </div>
+    </div>
+
+    <div id="report" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div id="report-title" style="font-size:15px;font-weight:600"></div>
+        <button class="btn btn-outline" onclick="resetAnalyzer()" style="font-size:12px;padding:5px 12px">Analyze another</button>
+      </div>
+      <div class="metric-grid" id="metrics"></div>
+      <div id="report-sections"></div>
+    </div>
+  </div>
+
+  <!-- UW MODEL TAB -->
+  <div class="tab-content" id="tab-uw">
+    <div class="card">
+      <div class="card-body" style="padding-top:20px">
+        <div class="sec-title" style="margin-bottom:14px">Upload documents</div>
+        <div class="upload-grid">
+          <label class="dz" id="dz-om">
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onchange="setFile('om',this.files[0])">
+            <div class="dz-icon">📄</div>
+            <div class="dz-label">Offering Memo</div>
+            <div class="dz-sub">PDF</div>
+            <div class="dz-file" id="fn-om"></div>
+          </label>
+          <label class="dz" id="dz-rr">
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onchange="setFile('rr',this.files[0])">
+            <div class="dz-icon">📊</div>
+            <div class="dz-label">Rent Roll</div>
+            <div class="dz-sub">PDF or Excel</div>
+            <div class="dz-file" id="fn-rr"></div>
+          </label>
+          <label class="dz" id="dz-fin">
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onchange="setFile('fin',this.files[0])">
+            <div class="dz-icon">💰</div>
+            <div class="dz-label">Financials</div>
+            <div class="dz-sub">PDF or Excel</div>
+            <div class="dz-file" id="fn-fin"></div>
+          </label>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-dark" id="btn-extract" onclick="runExtraction()" disabled>Extract Data</button>
+          <span class="hint" id="hint-uw">Upload at least one file</span>
+        </div>
+        <div class="prog-wrap" id="prog-uw" style="display:none">
+          <div class="prog-bar"><div class="prog-fill" id="pf-uw"></div></div>
+          <div class="prog-txt" id="pt-uw"></div>
+        </div>
+        <div class="err" id="err-uw"></div>
+      </div>
+    </div>
+
+    <div id="uw-form" style="display:none">
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Review and edit before downloading.</p>
+
+      <div class="sec"><div class="sec-title">Property information</div>
+        <div class="fg2">
+          <div class="field"><label>Address</label><input id="f-address"></div>
+          <div class="field"><label>City / State</label><input id="f-city"></div>
+          <div class="field"><label>Year built</label><input id="f-year"></div>
+          <div class="field"><label># of apartments</label><input id="f-units"></div>
+          <div class="field"><label># of parking spaces</label><input id="f-parking"></div>
+          <div class="field"><label>Zoning</label><input id="f-zoning"></div>
+        </div>
+      </div>
+
+      <div class="sec"><div class="sec-title">Pricing</div>
+        <div class="fg2">
+          <div class="field"><label>List price ($)</label><input id="f-list"></div>
+          <div class="field"><label>Purchase price ($)</label><input id="f-pp"></div>
+          <div class="field"><label>Transaction costs ($)</label><input id="f-txn" value="150000"></div>
+          <div class="field"><label>Rehab costs ($)</label><input id="f-rehab" value="0"></div>
+        </div>
+      </div>
+
+      <div class="sec"><div class="sec-title">Financing — Loan #1</div>
+        <div class="fg2">
+          <div class="field"><label>Loan amount ($)</label><input id="f-loan"></div>
+          <div class="field"><label>Interest rate (%)</label><input id="f-rate" placeholder="6.05"></div>
+          <div class="field"><label>Loan term (years)</label><input id="f-term" placeholder="10"></div>
+          <div class="field"><label>Amortization</label><input id="f-amort" placeholder="IO / Amort 30"></div>
+        </div>
+      </div>
+
+      <div class="sec"><div class="sec-title">Annual expenses (T=0)</div>
+        <div class="fg2">
+          <div class="field"><label>Property taxes ($)</label><input id="f-tax"></div>
+          <div class="field"><label>Insurance ($)</label><input id="f-ins"></div>
+          <div class="field"><label>Gas ($)</label><input id="f-gas"></div>
+          <div class="field"><label>Electric ($)</label><input id="f-elec"></div>
+          <div class="field"><label>Water & sewer ($)</label><input id="f-water"></div>
+          <div class="field"><label>Scavenger ($)</label><input id="f-scav"></div>
+          <div class="field"><label>Property mgmt ($)</label><input id="f-mgmt"></div>
+          <div class="field"><label>Repairs & maint ($)</label><input id="f-rm"></div>
+          <div class="field"><label>Payroll ($)</label><input id="f-payroll"></div>
+          <div class="field"><label>Advertising ($)</label><input id="f-ads"></div>
+          <div class="field"><label>Administrative ($)</label><input id="f-admin"></div>
+          <div class="field"><label>Reserves ($)</label><input id="f-res"></div>
+        </div>
+      </div>
+
+      <div class="sec"><div class="sec-title">Unit mix</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>#</th><th>Type</th><th>SF</th><th>Count</th><th>Avg rent</th><th>Market rent</th></tr></thead>
+          <tbody id="unit-body"></tbody>
+        </table></div>
+        <button class="add-btn" onclick="addUnitRow()">+ Add row</button>
+      </div>
+
+      <div class="sec"><div class="sec-title">Rent roll <span id="rr-count" style="font-weight:400;font-size:11px;text-transform:none;letter-spacing:0"></span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Unit</th><th>Type</th><th>SF</th><th>Current rent</th><th>Market rent</th><th>Lease exp.</th></tr></thead>
+          <tbody id="rr-body"></tbody>
+        </table></div>
+        <button class="add-btn" onclick="addRRRow()">+ Add row</button>
+      </div>
+
+      <div class="sec" id="comps-sec" style="display:none"><div class="sec-title">Sales comps</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Address</th><th>Sale price</th><th>$/Unit</th><th>Cap rate %</th><th>Year</th></tr></thead>
+          <tbody id="comps-body"></tbody>
+        </table></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-dark" onclick="generateUW()">⬇ Download UW Excel</button>
+        <button class="btn btn-outline" onclick="resetUW()">← Re-upload</button>
+      </div>
+      <div class="err" id="err-gen"></div>
+
+      <div id="dl-success" style="display:none;margin-top:14px">
+        <div class="success-box">
+          <div class="success-title">✓ Downloaded</div>
+          <div class="success-sub" id="dl-name"></div>
+          <div class="btn-row">
+            <button class="btn btn-green" onclick="generateUW()">Download again</button>
+            <button class="btn btn-outline" onclick="resetUW()">Start over</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let apiKey='';
+let uwFiles={om:null,rr:null,fin:null};
+let analyzerFile=null;
+let unitRows=[{type:'',sf:'',count:'',avg_current_rent:'',market_rent:''}];
+let rrRows=[],compsRows=[];
+
+function saveKey(){
+  const v=document.getElementById('api-key').value.trim();
+  if(!v.startsWith('sk-')){alert('Please enter a valid Anthropic API key');return;}
+  apiKey=v;
+  document.getElementById('api-saved').style.display='block';
+  setTimeout(()=>document.getElementById('api-box').classList.add('hidden'),1200);
+}
+document.getElementById('api-key').addEventListener('keydown',e=>{if(e.key==='Enter')saveKey();});
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['analyzer','uw'][i]===t));
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function setAnalyzerFile(f){
+  if(!f)return; analyzerFile=f;
+  document.getElementById('dz-a').classList.add('has-file');
+  document.getElementById('fn-a').textContent='✓ '+f.name;
+  document.getElementById('btn-analyze').disabled=false;
+  document.getElementById('hint-a').style.display='none';
+}
+
+function setFile(type,f){
+  if(!f)return; uwFiles[type]=f;
+  document.getElementById('dz-'+type).classList.add('has-file');
+  document.getElementById('fn-'+type).textContent='✓ '+f.name;
+  if(uwFiles.om||uwFiles.rr||uwFiles.fin){document.getElementById('btn-extract').disabled=false;document.getElementById('hint-uw').style.display='none';}
+}
+
+async function b64(file){return new Promise((r,j)=>{const rd=new FileReader();rd.onload=e=>r(e.target.result.split(',')[1]);rd.onerror=j;rd.readAsDataURL(file);});}
+
+async function xlsxToText(file){return new Promise(r=>{const rd=new FileReader();rd.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});let t='';wb.SheetNames.slice(0,6).forEach(n=>{t+='\nSheet: '+n+'\n'+XLSX.utils.sheet_to_csv(wb.Sheets[n]).slice(0,5000)+'\n';});r(t);}catch{r('[Could not parse]');}};rd.readAsArrayBuffer(file);});}
+
+async function callAPI(messages){
+  if(!apiKey){document.getElementById('api-box').classList.remove('hidden');document.getElementById('api-key').focus();throw new Error('Please enter your API key first');}
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages})});
+  if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'API error '+resp.status);}
+  const data=await resp.json();
+  return data.content.map(b=>b.text||'').join('');
+}
+
+function parseJSON(raw){
+  const clean=raw.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+  try{return JSON.parse(clean);}catch{const m=clean.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw new Error('Could not parse response');}
+}
+
+function setProg(id,pct,txt){document.getElementById('pf-'+id).style.width=pct+'%';document.getElementById('pt-'+id).textContent=txt;}
+
+const ANALYZE_PROMPT=`You are a real estate analyst. Analyze this Offering Memorandum and return a comprehensive JSON report. Return ONLY raw JSON:
+{"property":{"name":null,"address":null,"city_state":null,"asset_type":null,"units":null,"year_built":null,"sf":null},"deal":{"list_price":null,"price_per_unit":null,"cap_rate":null,"noi":null,"occupancy":null,"avg_rent":null},"assumptions":{"rent_growth":null,"expense_growth":null,"vacancy":null,"exit_cap":null,"hold_period":null,"irr_projection":null},"market":{"economic_drivers":null,"major_employers":null,"population_trend":null,"rent_trend":null,"submarket_vacancy":null,"new_supply":null},"area_retail":null,"schools":null,"flood_zone":null,"property_tax":{"annual_amount":null,"rate":null,"how_handled":null,"reassessment_notes":null},"sales_comps":[{"address":null,"price":null,"price_per_unit":null,"cap_rate":null,"year":null}],"risks":null,"strengths":null,"summary":null}
+Be thorough. Return ONLY the JSON.`;
+
+async function runAnalysis(){
+  document.getElementById('btn-analyze').disabled=true;
+  document.getElementById('err-a').style.display='none';
+  document.getElementById('prog-a').style.display='block';
+  document.getElementById('report').style.display='none';
+  setProg('a',5,'Reading document...');
+  try{
+    const parts=[{type:'text',text:ANALYZE_PROMPT}];
+    if(analyzerFile.name.match(/\.pdf$/i)){setProg('a',20,'Processing PDF...');const b=await b64(analyzerFile);parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});}
+    else{setProg('a',20,'Processing file...');const t=await xlsxToText(analyzerFile);parts.push({type:'text',text:'\n[FILE: '+analyzerFile.name+']\n'+t});}
+    setProg('a',50,'AI analyzing OM...');
+    const raw=await callAPI([{role:'user',content:parts}]);
+    setProg('a',90,'Building report...');
+    const d=parseJSON(raw);
+    setTimeout(()=>{document.getElementById('prog-a').style.display='none';renderReport(d);},400);
+  }catch(e){
+    document.getElementById('prog-a').style.display='none';
+    document.getElementById('err-a').textContent='Error: '+e.message;document.getElementById('err-a').style.display='block';
+    document.getElementById('btn-analyze').disabled=false;
+  }
+}
+
+function fmt(v){if(v===null||v===undefined||String(v)==='null'||v==='')return'—';return String(v);}
+function fmtM(v){if(!v)return'—';const n=parseFloat(String(v).replace(/[$,]/g,''));return isNaN(n)?String(v):'$'+n.toLocaleString();}
+
+function renderReport(d){
+  const p=d.property||{},deal=d.deal||{},ass=d.assumptions||{},mkt=d.market||{},tax=d.property_tax||{};
+  document.getElementById('report-title').textContent=p.name||p.address||'OM Analysis Report';
+  const mg=document.getElementById('metrics');
+  mg.innerHTML=[['Asset type',fmt(p.asset_type)],['Units',fmt(p.units)],['Ask price',fmtM(deal.list_price)],['Cap rate',deal.cap_rate?deal.cap_rate+(String(deal.cap_rate).includes('%')?'':'%'):'—']].map(([l,v])=>`<div class="metric"><div class="metric-label">${l}</div><div class="metric-val">${v}</div></div>`).join('');
+  const sec=document.getElementById('report-sections');sec.innerHTML='';
+  const cards=[
+    {title:'Property overview',rows:[['Address',fmt(p.address)],['City / State',fmt(p.city_state)],['Year built',fmt(p.year_built)],['Total SF',p.sf?Number(p.sf).toLocaleString()+' SF':'—'],['Occupancy',fmt(deal.occupancy)],['Avg rent',deal.avg_rent?'$'+fmt(deal.avg_rent)+'/mo':'—'],['NOI',fmtM(deal.noi)],['Price/unit',fmtM(deal.price_per_unit)]]},
+    {title:'UW assumptions in the OM',rows:[['Rent growth',fmt(ass.rent_growth)],['Expense growth',fmt(ass.expense_growth)],['Vacancy',fmt(ass.vacancy)],['Exit cap rate',fmt(ass.exit_cap)],['Hold period',fmt(ass.hold_period)],['Projected IRR',fmt(ass.irr_projection)]]},
+    {title:'Market & economic drivers',rows:[['Economic drivers',fmt(mkt.economic_drivers)],['Major employers',fmt(mkt.major_employers)],['Population trend',fmt(mkt.population_trend)],['Rent trend',fmt(mkt.rent_trend)],['Submarket vacancy',fmt(mkt.submarket_vacancy)],['New supply',fmt(mkt.new_supply)]]},
+    {title:'Area retail & amenities',rows:[['Nearby retail',fmt(d.area_retail)]]},
+    {title:'Schools',rows:[['School info',fmt(d.schools)]]},
+    {title:'Flood zone',rows:[['Status',fmt(d.flood_zone)]]},
+    {title:'Property taxes',rows:[['Annual amount',fmtM(tax.annual_amount)],['Tax rate',fmt(tax.rate)],['How handled',fmt(tax.how_handled)],['Reassessment notes',fmt(tax.reassessment_notes)]]},
+  ];
+  cards.forEach(c=>{
+    const hasData=c.rows.some(r=>r[1]&&r[1]!=='—');if(!hasData)return;
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML='<div class="report-card-title">'+c.title+'</div>'+c.rows.filter(r=>r[1]&&r[1]!=='—').map(r=>`<div class="report-row"><span class="rkey">${r[0]}</span><span class="rval">${r[1]}</span></div>`).join('');
+    sec.appendChild(div);
+  });
+  if(d.sales_comps&&d.sales_comps.filter(c=>c.address).length){
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML='<div class="report-card-title">Sales comps</div><div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr>'+['Address','Price','$/Unit','Cap rate','Year'].map(h=>`<th style="text-align:left;padding:5px 8px;font-size:11px;color:#888;border-bottom:1px solid #e5e5e5;white-space:nowrap">${h}</th>`).join('')+'</tr></thead><tbody>'+d.sales_comps.filter(c=>c.address).map(c=>'<tr>'+[c.address,fmtM(c.price),fmtM(c.price_per_unit),c.cap_rate?c.cap_rate+'%':'—',c.year||'—'].map(v=>`<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0">${v||'—'}</td>`).join('')+'</tr>').join('')+'</tbody></table></div>';
+    sec.appendChild(div);
+  }
+  ['strengths','risks','summary'].forEach(k=>{
+    if(!d[k])return;
+    const div=document.createElement('div');div.className='report-card';
+    div.innerHTML=`<div class="report-card-title">${k.charAt(0).toUpperCase()+k.slice(1)}</div><div style="font-size:13px;line-height:1.7">${fmt(d[k])}</div>`;
+    sec.appendChild(div);
+  });
+  document.getElementById('report').style.display='block';
+}
+
+function resetAnalyzer(){analyzerFile=null;document.getElementById('fn-a').textContent='';document.getElementById('dz-a').classList.remove('has-file');document.getElementById('btn-analyze').disabled=true;document.getElementById('hint-a').style.display='';document.getElementById('report').style.display='none';}
+
+const EXTRACT_PROMPT=`You are a real estate underwriting data extraction expert. Extract ALL data from the provided documents. Return ONLY raw JSON:
+{"property":{"address":null,"city_state":null,"year_built":null,"num_units":null,"num_parking":null,"zoning":null},"pricing":{"list_price":null,"purchase_price":null,"transaction_costs":null,"rehab_costs":null},"financing":{"loan_amount":null,"interest_rate_pct":null,"loan_term_years":null,"amortization":null},"expenses":{"property_taxes":null,"insurance":null,"gas":null,"electric":null,"water_sewer":null,"scavenger":null,"property_mgmt":null,"repairs_maintenance":null,"payroll":null,"advertising":null,"administrative":null,"reserves":null},"unit_mix":[{"type":null,"sf":null,"count":null,"avg_current_rent":null,"market_rent":null}],"rent_roll":[{"unit":null,"type":null,"sf":null,"current_rent":null,"market_rent":null,"lease_expiration":null}],"sales_comps":[{"address":null,"sale_price":null,"price_per_unit":null,"cap_rate_pct":null,"year":null}]}
+Rules: dollars as plain numbers, rates as decimals, null for missing, include ALL rent roll units. Return ONLY the JSON.`;
+
+async function runExtraction(){
+  document.getElementById('btn-extract').disabled=true;
+  document.getElementById('err-uw').style.display='none';
+  document.getElementById('prog-uw').style.display='block';
+  setProg('uw',5,'Reading files...');
+  try{
+    const parts=[{type:'text',text:EXTRACT_PROMPT}];
+    for(const[key,file] of Object.entries(uwFiles)){
+      if(!file)continue;
+      setProg('uw',20,'Processing '+file.name+'...');
+      if(file.name.match(/\.pdf$/i)){const b=await b64(file);parts.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:b}});}
+      else{const t=await xlsxToText(file);parts.push({type:'text',text:'\n['+key.toUpperCase()+': '+file.name+']\n'+t});}
+    }
+    setProg('uw',50,'AI extracting data...');
+    const raw=await callAPI([{role:'user',content:parts}]);
+    setProg('uw',90,'Populating fields...');
+    const d=parseJSON(raw);
+    populate(d);
+    setTimeout(()=>{document.getElementById('prog-uw').style.display='none';document.getElementById('uw-form').style.display='block';},400);
+  }catch(e){
+    document.getElementById('prog-uw').style.display='none';
+    document.getElementById('err-uw').textContent='Error: '+e.message;document.getElementById('err-uw').style.display='block';
+    document.getElementById('btn-extract').disabled=false;
+  }
+}
+
+function sv(id,val){const el=document.getElementById(id);if(el&&val!==null&&val!==undefined&&String(val)!=='null')el.value=val;}
+function populate(d){
+  const p=d.property||{},pr=d.pricing||{},fi=d.financing||{},ex=d.expenses||{};
+  sv('f-address',p.address);sv('f-city',p.city_state);sv('f-year',p.year_built);sv('f-units',p.num_units);sv('f-parking',p.num_parking);sv('f-zoning',p.zoning);
+  sv('f-list',pr.list_price);sv('f-pp',pr.purchase_price);if(pr.transaction_costs)sv('f-txn',pr.transaction_costs);if(pr.rehab_costs)sv('f-rehab',pr.rehab_costs);
+  sv('f-loan',fi.loan_amount);sv('f-rate',fi.interest_rate_pct);sv('f-term',fi.loan_term_years);sv('f-amort',fi.amortization);
+  sv('f-tax',ex.property_taxes);sv('f-ins',ex.insurance);sv('f-gas',ex.gas);sv('f-elec',ex.electric);sv('f-water',ex.water_sewer);sv('f-scav',ex.scavenger);
+  sv('f-mgmt',ex.property_mgmt);sv('f-rm',ex.repairs_maintenance);sv('f-payroll',ex.payroll);sv('f-ads',ex.advertising);sv('f-admin',ex.administrative);sv('f-res',ex.reserves);
+  unitRows=(d.unit_mix||[]).filter(r=>r.type||r.count);if(!unitRows.length)unitRows=[{type:'',sf:'',count:'',avg_current_rent:'',market_rent:''}];renderUnitTable();
+  rrRows=(d.rent_roll||[]).filter(r=>r.unit||r.current_rent);renderRRTable();
+  compsRows=(d.sales_comps||[]).filter(c=>c.address);renderComps();
+}
+
+function renderUnitTable(){
+  const tb=document.getElementById('unit-body');tb.innerHTML='';
+  unitRows.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    const nd=document.createElement('td');nd.textContent=i+1;nd.style.cssText='color:#888;font-size:11px;padding-left:8px;width:24px';tr.appendChild(nd);
+    ['type','sf','count','avg_current_rent','market_rent'].forEach(k=>{const td=document.createElement('td');const inp=document.createElement('input');inp.value=row[k]||'';inp.placeholder='—';inp.oninput=e=>unitRows[i][k]=e.target.value;td.appendChild(inp);tr.appendChild(td);});
+    tb.appendChild(tr);
+  });
+}
+function addUnitRow(){unitRows.push({type:'',sf:'',count:'',avg_current_rent:'',market_rent:''});renderUnitTable();}
+
+function renderRRTable(){
+  const tb=document.getElementById('rr-body');tb.innerHTML='';
+  document.getElementById('rr-count').textContent=rrRows.length?'('+rrRows.length+' units)':'';
+  rrRows.forEach((row,i)=>{const tr=document.createElement('tr');['unit','type','sf','current_rent','market_rent','lease_expiration'].forEach(k=>{const td=document.createElement('td');const inp=document.createElement('input');inp.value=row[k]||'';inp.placeholder='—';inp.oninput=e=>rrRows[i][k]=e.target.value;td.appendChild(inp);tr.appendChild(td);});tb.appendChild(tr);});
+}
+function addRRRow(){rrRows.push({unit:'',type:'',sf:'',current_rent:'',market_rent:'',lease_expiration:''});renderRRTable();}
+
+function renderComps(){
+  const s=document.getElementById('comps-sec');if(!compsRows.length){s.style.display='none';return;}s.style.display='block';
+  const tb=document.getElementById('comps-body');tb.innerHTML='';
+  compsRows.forEach((row,i)=>{const tr=document.createElement('tr');['address','sale_price','price_per_unit','cap_rate_pct','year'].forEach(k=>{const td=document.createElement('td');const inp=document.createElement('input');inp.value=row[k]||'';inp.placeholder='—';inp.oninput=e=>compsRows[i][k]=e.target.value;td.appendChild(inp);tr.appendChild(td);});tb.appendChild(tr);});
+}
+
+function resetUW(){uwFiles={om:null,rr:null,fin:null};['om','rr','fin'].forEach(t=>{document.getElementById('dz-'+t).classList.remove('has-file');document.getElementById('fn-'+t).textContent='';});document.getElementById('btn-extract').disabled=true;document.getElementById('hint-uw').style.display='';document.getElementById('uw-form').style.display='none';document.getElementById('dl-success').style.display='none';unitRows=[{type:'',sf:'',count:'',avg_current_rent:'',market_rent:''}];rrRows=[];compsRows=[];renderUnitTable();renderRRTable();}
+
+function gv(id){return document.getElementById(id)?.value||'';}
+function n(v){const x=parseFloat(String(v).replace(/[$,% ]/g,''));return isNaN(x)?0:x;}
+
+function generateUW(){
+  document.getElementById('err-gen').style.display='none';
+  try{
+    const wb=XLSX.utils.book_new();
+    const pp=n(gv('f-pp')),loan=n(gv('f-loan')),txn=n(gv('f-txn')),rehab=n(gv('f-rehab'));
+    const ia=[['','PROPERTY INFORMATION'],['','Address','','','',gv('f-address')],['','City/State','','','',gv('f-city')],['','Year Built','','','',gv('f-year')],['','# of Apartments','','','',n(gv('f-units'))],['','# of Parking Spaces','','','',n(gv('f-parking'))],['','Zoning','','',gv('f-zoning')],[''],['','PROJECT COST','% of Tot','Per SF','Per Unit','Total Cost'],['','List Price','','','',n(gv('f-list'))],['','Purchase Price','','','',pp],['','Transaction Costs','','','',txn],['','Rehab Costs','','','',rehab],['','Project Cost','','','',pp+txn+rehab],[''],['','FINANCING','','Loan #1'],['','Loan Amount','',loan],['','Loan Int. Rate','',n(gv('f-rate'))/100||0],['','Loan Term (Yrs)','',n(gv('f-term'))],['','Amort','',gv('f-amort')],[''],['','ASSUMPTIONS'],['','Inc. Growth (1-3)',0.03,'','Turnover %',0.5],['','Inc. Growth (4-10)','3% - 3.75%'],['','Exp. Growth',0.025],['','Current Multi Family Vacancy',0.05],['','Stabilized Multi Family Vacancy (Years 2-10)',0.05],['','Current Multi Family Concessions',0.005],['','Stabilized Multi Family Concessions (Years 4-10)',0.005],['','Current Commercial Vacancy',0.1],['','Exit Cap',''],['','Cost of Sale',0.025],[''],['','UNIT TYPE','SF','Count','Avg Rent','Avg $/SF','Mkt Rent','Mkt $/SF']];
+    unitRows.forEach((r,i)=>{const sf=n(r.sf),rent=n(r.avg_current_rent),mkt=n(r.market_rent);ia.push([i+1,r.type||'',sf||'',n(r.count)||'',rent||'',sf&&rent?+(rent/sf).toFixed(2):'',mkt||'',sf&&mkt?+(mkt/sf).toFixed(2):'']);});
+    const wsIA=XLSX.utils.aoa_to_sheet(ia);wsIA['!cols']=[{wch:4},{wch:42},{wch:10},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12}];
+    XLSX.utils.book_append_sheet(wb,wsIA,'Input Assumptions');
+    const rrData=[['ADDRESS','UNIT TYPE','SF','Current/Mo.','$/SF','Market/Mo.','$/SF','Rehab/Mo.','$/SF','Expiration']];
+    rrRows.forEach(r=>{const sf=n(r.sf),cur=n(r.current_rent),mkt=n(r.market_rent);rrData.push([r.unit||'',r.type||'',sf||'',cur||'',sf&&cur?+(cur/sf).toFixed(2):'',mkt||'',sf&&mkt?+(mkt/sf).toFixed(2):'','','',r.lease_expiration||'']);});
+    const wsRR=XLSX.utils.aoa_to_sheet(rrData);wsRR['!cols']=[{wch:20},{wch:12},{wch:8},{wch:14},{wch:7},{wch:14},{wch:7},{wch:12},{wch:7},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,wsRR,'RentRoll');
+    const exData=[['','EXPENSES','T=0'],['','Property Taxes',n(gv('f-tax'))],['','Insurance',n(gv('f-ins'))],['','Gas',n(gv('f-gas'))],['','Electric',n(gv('f-elec'))],['','Water & Sewer',n(gv('f-water'))],['','Scavenger',n(gv('f-scav'))],['','Property Mgmt',n(gv('f-mgmt'))],['','Payroll',n(gv('f-payroll'))],['','Repairs & Maint & Dec',n(gv('f-rm'))],['','Advertising & Marketing',n(gv('f-ads'))],['','Administrative/Travel',n(gv('f-admin'))],['','Reserves',n(gv('f-res'))],['','Total Expenses','=SUM(C2:C13)']];
+    const wsEx=XLSX.utils.aoa_to_sheet(exData);wsEx['!cols']=[{wch:4},{wch:34},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,wsEx,'Expenses (T=0)');
+    if(compsRows.length){const cData=[['Address','Sale Price ($)','$/Unit','Cap Rate (%)','Year']];compsRows.forEach(r=>cData.push([r.address||'',r.sale_price||'',r.price_per_unit||'',r.cap_rate_pct||'',r.year||'']));const wsC=XLSX.utils.aoa_to_sheet(cData);wsC['!cols']=[{wch:30},{wch:14},{wch:12},{wch:12},{wch:8}];XLSX.utils.book_append_sheet(wb,wsC,'Sales Comps');}
+    const ti=unitRows.reduce((s,r)=>s+n(r.count)*n(r.avg_current_rent),0)*12;
+    const te=['f-tax','f-ins','f-gas','f-elec','f-water','f-scav','f-mgmt','f-payroll','f-rm','f-ads','f-admin','f-res'].reduce((s,id)=>s+n(gv(id)),0);
+    const sumData=[['DEAL SUMMARY',''],['Property',gv('f-address')],['City/State',gv('f-city')],['Units',n(gv('f-units'))],['Year Built',gv('f-year')],['',''],['DEAL METRICS',''],['Purchase Price',pp],['Transaction Costs',txn],['Rehab Costs',rehab],['Total Project Cost',pp+txn+rehab],['Loan Amount',loan],['Equity Required',Math.max(pp+txn+rehab-loan,0)],['LTV',pp?(loan/pp*100).toFixed(1)+'%':''],['Interest Rate',gv('f-rate')?gv('f-rate')+'%':''],['Loan Term',gv('f-term')?gv('f-term')+' yrs':''],['',''],['INCOME',''],['Gross Annual SGI',ti],['Total Annual Expenses',te],['NOI',ti-te]];
+    const wsSummary=XLSX.utils.aoa_to_sheet(sumData);wsSummary['!cols']=[{wch:26},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+    const fname='UW_'+(gv('f-address')||'Deal').replace(/[^a-z0-9]/gi,'_').slice(0,28)+'_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    XLSX.writeFile(wb,fname);
+    document.getElementById('dl-name').textContent=fname;
+    document.getElementById('dl-success').style.display='block';
+  }catch(e){document.getElementById('err-gen').textContent='Error: '+e.message;document.getElementById('err-gen').style.display='block';}
+}
+
+renderUnitTable();renderRRTable();
+</script>
+</body>
+</html>
